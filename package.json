@@ -9,7 +9,7 @@
     "test": "node --test --test-concurrency=1"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.3",
     "express": "^4.19.2",
     "pg": "^8.11.3"
   },
