@@ -1,0 +1,19 @@
+{
+  "name": "hourcrate",
+  "version": "0.1.0",
+  "description": "HourCrate minimal implementation",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "test": "node --test --test-concurrency=1"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "express": "^4.19.2",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "supertest": "^6.3.3"
+  }
+}
