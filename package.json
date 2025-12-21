@@ -1,7 +1,7 @@
 {
   "name": "hourcrate",
   "version": "0.1.0",
-  "description": "HourCrate minimal implementation",
+  "description": "Hourcrate minimal implementation",
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",

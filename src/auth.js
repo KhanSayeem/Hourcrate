@@ -58,11 +58,11 @@ function optionalAuthMiddleware(pool) {
 }
 
 function handleUnauthenticated(req, res) {
-  if (requestExpectsJson(req)) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
   if (requestExpectsHtml(req)) {
     return res.redirect("/login");
+  }
+  if (requestExpectsJson(req)) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
   return res.status(401).json({ error: "Unauthorized" });
 }

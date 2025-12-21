@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /upgrade
+Disallow: /clients
+Disallow: /entries
+
+Sitemap: https://hourcrate.com/sitemap.xml

@@ -11,7 +11,7 @@ async function start() {
 
   const port = process.env.PORT || 3000;
   app.listen(port, () => {
-    console.log(`HourCrate server running on port ${port}`);
+    console.log(`Hourcrate server running on port ${port}`);
   });
 }
 

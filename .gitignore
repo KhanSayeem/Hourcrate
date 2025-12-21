@@ -1,0 +1,4 @@
+.vercel
+.env
+.migrations
+.node_modules
