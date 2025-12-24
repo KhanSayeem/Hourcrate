@@ -227,23 +227,14 @@ function createApp(pool, config = {}) {
   app.get("/privacy", (req, res) => {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     return res.status(200).send(
-      renderInfoPage("PRIVACY", [
-        "WE STORE CREDENTIALS AND RECORDS TO PROVIDE THE SERVICE.",
-        "SESSION COOKIES FOR AUTH ONLY.",
-        "NO TRACKERS. NO ANALYTICS.",
-      ])
+      renderPrivacyPage()
     );
   });
 
   app.get("/terms", (req, res) => {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     return res.status(200).send(
-      renderInfoPage("TERMS", [
-        "MANAGE RETAINER LIMITS.",
-        "YOU ARE RESPONSIBLE FOR ACCURACY.",
-        "SERVICE IS AS-IS.",
-        "CANCEL ANYTIME.",
-      ])
+      renderTermsPage()
     );
   });
 
@@ -1188,13 +1179,36 @@ function renderLandingPage(options = {}) {
   </main>
 
   <footer class="footer">
-    <a href="/login">LOGIN</a>
-    <span class="separator" aria-hidden="true">/</span>
-    <a href="/pricing">PRICING</a>
-    <span class="separator" aria-hidden="true">/</span>
-    <a href="/privacy">PRIVACY</a>
-    <span class="separator" aria-hidden="true">/</span>
-    <a href="/terms">TERMS</a>
+    <div class="footer-links" aria-label="Footer navigation">
+      <a href="/login">LOGIN</a>
+      <a href="/pricing">PRICING</a>
+      <a href="/privacy">PRIVACY</a>
+      <a href="/terms">TERMS</a>
+    </div>
+    <div class="footer-meta" aria-label="Footer contact">
+      <div class="footer-identity">
+        <span class="footer-credit">BUILT BY SAYEEM KHAN</span>
+        <a class="footer-social" href="https://www.linkedin.com/in/sayeem-khan-7657732b7/" aria-label="LinkedIn">
+          <svg class="footer-icon" viewBox="0 0 24 24" role="img" aria-hidden="true">
+            <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6 1.12 6 0 4.88 0 3.5 0 2.12 1.12 1 2.5 1 3.86 1 4.98 2.12 4.98 3.5zM.24 23.5h4.52V8.5H.24v15zM8.43 8.5h4.33v2.04h.06c.6-1.1 2.05-2.25 4.23-2.25 4.52 0 5.36 2.9 5.36 6.67v8.54h-4.52v-7.57c0-1.8-.03-4.11-2.5-4.11-2.5 0-2.88 1.95-2.88 3.98v7.7H8.43V8.5z"/>
+          </svg>
+        </a>
+        <a class="footer-social" href="https://github.com/KhanSayeem" aria-label="GitHub">
+          <svg class="footer-icon" viewBox="0 0 24 24" role="img" aria-hidden="true">
+            <path d="M12 .5a11.5 11.5 0 0 0-3.63 22.4c.57.1.78-.24.78-.55v-2.17c-3.19.7-3.87-1.53-3.87-1.53-.52-1.33-1.28-1.68-1.28-1.68-1.06-.74.08-.73.08-.73 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.74 1.27 3.4.97.11-.75.42-1.27.76-1.56-2.54-.29-5.21-1.26-5.21-5.66 0-1.25.45-2.28 1.19-3.09-.12-.3-.51-1.48.11-3.1 0 0 .96-.3 3.14 1.18a11 11 0 0 1 5.72 0c2.18-1.48 3.14-1.18 3.14-1.18.62 1.62.23 2.8.11 3.1.74.8 1.19 1.83 1.19 3.08 0 4.4-2.67 5.37-5.22 5.66.43.37.81 1.09.81 2.2v3.25c0 .31.2.66.78.55A11.5 11.5 0 0 0 12 .5z"/>
+          </svg>
+        </a>
+        <a class="footer-social" href="mailto:sayeem@daywinlabs.com" aria-label="Email">
+          <svg class="footer-icon" viewBox="0 0 24 24" role="img" aria-hidden="true">
+            <path d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm0 2v1.1l9 5.1 9-5.1V7l-9 5.1L3 7zm0 3.26v6.74h18v-6.74l-9 5.1-9-5.1z"/>
+          </svg>
+        </a>
+      </div>
+      <div class="footer-open">
+        <a href="https://github.com/KhanSayeem">OPEN SOURCE ON GITHUB</a>
+      </div>
+      <div class="footer-copy">© 2025 HOURCRATE | OPERATED BY DAYWIN LABS</div>
+    </div>
   </footer>
 </body>
 </html>`;
@@ -1340,6 +1354,175 @@ function renderInfoPage(title, paragraphs) {
   <main class="page text-page">
     <h1>${escapeHtml(title)}</h1>
     ${body}
+  </main>
+</body>
+</html>`;
+}
+
+function renderPrivacyPage() {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Hourcrate</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="page text-page legal">
+    <h1>PRIVACY POLICY</h1>
+    <p><strong>Effective date:</strong> March 15, 2025</p>
+
+    <section class="legal-section">
+      <h2>1. Information We Collect</h2>
+      <ul>
+        <li><strong>Account data:</strong> your name, email address, workspace details, and billing contact information provided to create and manage your account.</li>
+        <li><strong>Authentication data:</strong> encrypted credentials, session tokens, and optional single sign-on identifiers used to authenticate users and protect accounts.</li>
+        <li><strong>Usage data:</strong> actions you take in the Service (such as client records, time entries, and settings changes), support communications, and limited technical logs to keep the Service reliable.</li>
+        <li><strong>Payment data:</strong> transaction details from our payment providers (Stripe, Paddle, and 2Checkout), such as billing country, transaction amount, and status. We do not receive full payment card numbers.</li>
+      </ul>
+      <p>The Service is designed to use only the information necessary to operate Hourcrate.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>2. How We Use the Information</h2>
+      <ul>
+        <li>Provide, maintain, and improve the Service and its features.</li>
+        <li>Authenticate you, secure accounts, and prevent fraud or misuse.</li>
+        <li>Process payments, invoices, and account changes through our payment partners.</li>
+        <li>Respond to support requests and send transactional communications about your account or the Service.</li>
+        <li>Comply with legal, tax, accounting, and regulatory obligations.</li>
+      </ul>
+    </section>
+
+    <section class="legal-section">
+      <h2>3. Cookies and Session Management</h2>
+      <p>We use essential cookies to keep you signed in, protect your session, and remember required settings. No optional or cross-site tracking cookies are set. You can disable cookies in your browser, but the Service may not function correctly without them.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>4. Data Storage and Security</h2>
+      <p>Data is stored on secure servers with encryption in transit and at rest where applicable. Access is limited to authorized personnel and service providers who need it to operate the Service. We apply reasonable technical and organizational safeguards, but no method of transmission or storage is completely secure.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>5. Data Retention</h2>
+      <p>We retain account and usage data while your account is active. Backup logs and security records are kept for limited periods. Billing and transaction records may be retained longer as required for tax, accounting, or legal obligations. When you request deletion, we remove or anonymize personal data unless we must keep it for legal reasons.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>6. Your Rights</h2>
+      <p>Subject to applicable law, you may request access to your personal data, correct inaccurate information, obtain a copy in a portable format, or ask us to delete your personal data. You may also object to or restrict certain processing. California and EU/UK residents may have additional rights to know the categories of data collected and to request deletion; we do not sell personal data. To exercise these rights, contact support@hourcrate.com.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>7. Data Sharing</h2>
+      <p>We do not sell or rent your personal data. We share information only with service providers who help us operate the Service (including hosting, email delivery, and payment processors such as Stripe, Paddle, and 2Checkout) and with authorities if required by law or to protect rights and safety. These providers are required to protect your information and use it only as instructed.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>8. International Users</h2>
+      <p>Your data may be transferred to and processed in countries other than where you live so we can provide the Service and support. Where required, we use legal mechanisms such as contractual safeguards to protect these transfers. By using the Service, you consent to these transfers as permitted by applicable law.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>9. Changes to This Policy</h2>
+      <p>We may update this Privacy Policy from time to time. If we make material changes, we will post the new version on this page with an updated effective date and, when appropriate, provide additional notice.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>10. Contact</h2>
+      <p>Questions or requests? Email support@hourcrate.com.</p>
+    </section>
+  </main>
+</body>
+</html>`;
+}
+
+function renderTermsPage() {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service - Hourcrate</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="page text-page legal">
+    <h1>TERMS OF SERVICE</h1>
+
+    <section class="legal-section">
+      <h2>1. Introduction and Acceptance</h2>
+      <p>Hourcrate is a web-based service available at https://hourcrate.com. By creating an account, accessing the Service, or paying fees, you agree to these Terms on behalf of yourself or the organization you represent and confirm you are legally permitted to do so. If you do not agree, do not use the Service. We may update these Terms by posting a revised version, and your continued use after the effective date constitutes acceptance.</p>
+      <p>Hourcrate is operated by Mohammad Sayeem Khan, founder of <a href="https://www.daywinlabs.com/">Daywin Labs</a>, based in Bangladesh.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>2. Description of the Service</h2>
+      <p>The Service helps teams set monthly hour limits, log work, and monitor retainers. We provide dashboards and exports to support your internal workflows. Hourcrate does not provide professional advice, and the accuracy of any time or client data you enter is your responsibility.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>3. Account Registration and User Responsibilities</h2>
+      <ul>
+        <li>Provide accurate account and billing information and keep it current.</li>
+        <li>Maintain the confidentiality of your login credentials and notify us of any suspected misuse.</li>
+        <li>Ensure you have the right to submit all data to the Service and that it complies with applicable laws and your client commitments.</li>
+        <li>Do not misuse the Service, interfere with its operation, or attempt unauthorized access.</li>
+      </ul>
+    </section>
+
+    <section class="legal-section">
+      <h2>4. Subscription, Billing, and Payment Terms</h2>
+      <ul>
+        <li>Paid plans are billed in advance on a recurring basis (for example, monthly or annually) until canceled.</li>
+        <li>You authorize Hourcrate and our payment processors (including Stripe, Paddle, and 2Checkout) to store and charge your payment method for all fees, applicable taxes, and currency conversion costs. Their terms and privacy notices apply to your transactions.</li>
+        <li>Prices exclude taxes unless stated otherwise; you are responsible for all taxes, duties, and bank or exchange fees.</li>
+        <li>Failed, reversed, or disputed payments may result in suspension or termination of access.</li>
+        <li>We may change plan features or fees; any price change will apply from your next renewal after notice. Continued use after the change means you accept the new fees.</li>
+      </ul>
+    </section>
+
+    <section class="legal-section">
+      <h2>5. Cancellation and Termination</h2>
+      <p>You can cancel at any time in your account settings or by contacting support. Cancellation takes effect at the end of the current billing term, and access continues until then unless we suspend or terminate earlier for breach, risk, or non-payment. We may close inactive or free accounts after notice. After termination, your data may be deleted; export anything you need beforehand.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>6. Refund Policy</h2>
+      <p>Fees are non-refundable and non-creditable except where required by law. Canceling does not provide refunds for the current billing period. If you believe a charge was made in error or duplicated, contact support promptly and we will review the request.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>7. Service Availability and Modifications</h2>
+      <p>The Service may change over time, and features may be added, modified, or removed. We may suspend or limit the Service for maintenance, security, or operational reasons. We do not guarantee uninterrupted availability or data preservation; you are responsible for keeping backups or exports.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>8. Limitation of Liability</h2>
+      <p>To the fullest extent permitted by law, Hourcrate and its affiliates will not be liable for indirect, incidental, special, consequential, or punitive damages, or for lost profits, revenues, data, or goodwill. Our total liability for any claim relating to the Service is limited to the fees you paid for the Service in the three months before the event giving rise to the claim. These limits apply even if we have been advised of the possibility of such damages and regardless of the theory of liability.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>9. Disclaimer of Warranties</h2>
+      <p>The Service is provided on an "as-is" and "as-available" basis. Hourcrate disclaims all warranties, express or implied, including any warranties of merchantability, fitness for a particular purpose, non-infringement, and accuracy. Your use of the Service is at your own risk.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>10. Indemnification</h2>
+      <p>You agree to indemnify and hold harmless Hourcrate, its affiliates, and their directors, officers, employees, and agents from any claims, losses, damages, liabilities, and expenses (including legal fees) arising from your use of the Service, your data, or any breach of these Terms or applicable law.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>11. Governing Law and Jurisdiction</h2>
+      <p>These Terms are governed by the laws of Bangladesh, without regard to conflict-of-law rules. The courts of Dhaka, Bangladesh will have exclusive jurisdiction over disputes relating to the Service, except where applicable law requires a different venue.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>12. Contact</h2>
+      <p>For questions or notices, contact support@hourcrate.com.</p>
+    </section>
   </main>
 </body>
 </html>`;
