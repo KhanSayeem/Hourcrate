@@ -16,7 +16,7 @@ function authMiddleware(pool) {
       return handleUnauthenticated(req, res);
     }
     const result = await pool.query(
-      `SELECT u.id AS user_id, u.is_paid
+      `SELECT u.id AS user_id, u.email, u.is_paid
        FROM sessions s
        JOIN users u ON u.id = s.user_id
        WHERE s.session_token = $1 AND s.expires_at > now()`,
@@ -28,6 +28,7 @@ function authMiddleware(pool) {
     req.userId = result.rows[0].user_id;
     req.user = {
       id: result.rows[0].user_id,
+      email: result.rows[0].email,
       isPaid: result.rows[0].is_paid === true,
     };
     return next();
@@ -40,7 +41,7 @@ function optionalAuthMiddleware(pool) {
     const token = cookies["session_token"];
     if (!token) return next();
     const result = await pool.query(
-      `SELECT u.id AS user_id, u.is_paid
+      `SELECT u.id AS user_id, u.email, u.is_paid
        FROM sessions s
        JOIN users u ON u.id = s.user_id
        WHERE s.session_token = $1 AND s.expires_at > now()`,
@@ -50,6 +51,7 @@ function optionalAuthMiddleware(pool) {
       req.userId = result.rows[0].user_id;
       req.user = {
         id: result.rows[0].user_id,
+        email: result.rows[0].email,
         isPaid: result.rows[0].is_paid === true,
       };
     }

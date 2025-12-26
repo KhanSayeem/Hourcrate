@@ -1,3 +1,4 @@
+require("dotenv").config();
 const { createPool } = require("./db");
 const { createApp } = require("./app");
 

@@ -4,6 +4,7 @@ const express = require("express");
 const https = require("https");
 const path = require("path");
 const { authMiddleware, optionalAuthMiddleware } = require("./auth");
+const fastspring = require("./fastspring");
 
 const SESSION_TTL_HOURS = 24 * 7;
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
@@ -102,7 +103,13 @@ function getDatabaseInfo() {
 
 function createApp(pool, config = {}) {
   const app = express();
-  app.use(express.json());
+  app.use(
+    express.json({
+      verify: (req, res, buf) => {
+        req.rawBody = buf.toString();
+      },
+    })
+  );
   app.use(express.urlencoded({ extended: false }));
   app.use(express.static(path.join(__dirname, "public")));
 
@@ -214,7 +221,26 @@ function createApp(pool, config = {}) {
   });
 
   app.get("/upgrade", optionalAuthMiddleware(pool), (req, res) => {
-    // Lemon Squeezy checkout will be integrated here
+    const storeUrl = process.env.FASTSPRING_STORE_URL;
+    const productPath = process.env.FASTSPRING_PRODUCT_PATH;
+
+    if (req.user && req.user.isPaid) {
+      return res.redirect("/dashboard");
+    }
+
+    if (storeUrl && productPath) {
+      // Construct FastSpring Web Storefront URL
+      // Format: https://STORE.onfastspring.com/PRODUCT-PATH
+      const baseUrl = storeUrl.endsWith("/") ? storeUrl : storeUrl + "/";
+      const checkoutUrl = new URL(productPath, baseUrl);
+      
+      if (req.userId) {
+        checkoutUrl.searchParams.set("tags", `userId:${req.userId}`);
+        checkoutUrl.searchParams.set("email", req.user.email); // Pre-fill email
+      }
+      return res.redirect(checkoutUrl.toString());
+    }
+
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     return res.status(200).send(
       renderInfoPage("GO PRO", [
@@ -222,6 +248,34 @@ function createApp(pool, config = {}) {
         "PAYMENTS COMING SOON.",
       ])
     );
+  });
+
+  app.post("/webhooks/fastspring", async (req, res) => {
+    const signature = req.get("X-FS-Signature");
+    const secret = process.env.FASTSPRING_HMAC_SECRET;
+    
+    console.log("[FastSpring] Webhook received");
+    console.log("[FastSpring] Signature Header:", signature);
+    // console.log("[FastSpring] Raw Body:", req.rawBody); // Uncomment if needed (be careful with PII)
+
+    if (!fastspring.verifySignature(req.rawBody, signature, secret)) {
+      console.warn("[FastSpring] Invalid signature");
+      console.warn("[FastSpring] Expected vs Actual:", 
+        crypto.createHmac("sha256", secret).update(req.rawBody).digest("base64"), 
+        signature
+      );
+      return res.status(401).send("Invalid signature");
+    }
+
+    try {
+      const events = req.body.events;
+      console.log("[FastSpring] Events:", JSON.stringify(events, null, 2));
+      await fastspring.processWebhook(pool, events);
+      return res.status(200).send("OK");
+    } catch (err) {
+      console.error("[FastSpring] Webhook processing failed", err);
+      return res.status(500).send("Internal Error");
+    }
   });
 
   app.get("/privacy", (req, res) => {
