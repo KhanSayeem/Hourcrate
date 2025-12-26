@@ -1139,13 +1139,13 @@ function renderLandingPage(options = {}) {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="index, follow">
-  <meta name="description" content="Hourcrate keeps monthly retainer hours contained with simple limits and clear tracking.">
-  <link rel="canonical" href="https://hourcrate.com/">
-  <title>Hourcrate | RETAINER HOURS. CONTAINED.</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({
+    title: "Hourcrate | RETAINER HOURS. CONTAINED.",
+    description:
+      "Hourcrate keeps monthly retainer hours contained with simple limits and clear tracking.",
+    canonical: "https://hourcrate.com/",
+    robots: "index, follow",
+  })}
 </head>
 <body class="landing-body">
   <main class="page landing">
@@ -1218,13 +1218,13 @@ function renderPricingPage() {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="index, follow">
-  <meta name="description" content="Hourcrate pricing: Free for two clients, Hourcrate Pro at $12/month for unlimited clients, history, exports, and alerts.">
-  <link rel="canonical" href="https://hourcrate.com/pricing">
-  <title>Pricing - Hourcrate</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({
+    title: "Pricing - Hourcrate",
+    description:
+      "Hourcrate pricing: Free for two clients, Hourcrate Pro at $12/month for unlimited clients, history, exports, and alerts.",
+    canonical: "https://hourcrate.com/pricing",
+    robots: "index, follow",
+  })}
 </head>
 <body>
   <main class="page pricing-page">
@@ -1272,10 +1272,11 @@ function renderSignupPage(errorMessage, values = {}) {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CREATE ACCOUNT - HOURCRATE</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({
+    title: "CREATE ACCOUNT - HOURCRATE",
+    description: "Create an Hourcrate account to keep retainer hours capped and visible.",
+    canonical: "https://hourcrate.com/signup",
+  })}
 </head>
 <body>
   <main class="page auth-page">
@@ -1304,10 +1305,10 @@ function renderSignupSuccessPage() {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACCOUNT CREATED</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({
+    title: "ACCOUNT CREATED",
+    description: "Your Hourcrate account is ready.",
+  })}
 </head>
 <body>
   <main class="page text-page">
@@ -1325,10 +1326,7 @@ function renderPlainMessagePage(message, options = {}) {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hourcrate</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({ title: "Hourcrate" })}
 </head>
 <body>
   <main class="page text-page">
@@ -1345,10 +1343,9 @@ function renderInfoPage(title, paragraphs) {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(title)} - Hourcrate</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({
+    title: `${title} - Hourcrate`,
+  })}
 </head>
 <body>
   <main class="page text-page">
@@ -1363,10 +1360,9 @@ function renderPrivacyPage() {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy - Hourcrate</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({
+    title: "Privacy Policy - Hourcrate",
+  })}
 </head>
 <body>
   <main class="page text-page legal">
@@ -1443,10 +1439,9 @@ function renderTermsPage() {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Terms of Service - Hourcrate</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({
+    title: "Terms of Service - Hourcrate",
+  })}
 </head>
 <body>
   <main class="page text-page legal">
@@ -1715,10 +1710,9 @@ function renderDashboardPage(clients, options = {}) {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Client Status - Hourcrate</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({
+    title: "Client Status - Hourcrate",
+  })}
 </head>
 <body class="dashboard-body">
   <main class="page dashboard-page">
@@ -1752,13 +1746,12 @@ function renderLoginPage(errorMessage, options = {}) {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="index, follow">
-  <meta name="description" content="Sign in to Hourcrate.">
-  <link rel="canonical" href="https://hourcrate.com/login">
-  <title>LOGIN - HOURCRATE</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({
+    title: "LOGIN - HOURCRATE",
+    description: "Sign in to Hourcrate.",
+    canonical: "https://hourcrate.com/login",
+    robots: "index, follow",
+  })}
 </head>
 <body>
   <main class="page auth-page">
@@ -1805,10 +1798,9 @@ function renderNewClientPage({ errorMessage, errorLink, values }) {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEW CLIENT</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({
+    title: "NEW CLIENT",
+  })}
 </head>
 <body>
   <main class="page">
@@ -1841,10 +1833,9 @@ function renderNewEntryPage({ client, errorMessage, values }) {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ADD HOURS</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({
+    title: "ADD HOURS",
+  })}
 </head>
 <body>
   <main class="page">
@@ -1870,10 +1861,9 @@ function renderNotFoundPage(message) {
   return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NOT FOUND</title>
-  <link rel="stylesheet" href="/styles.css">
+${renderBaseHead({
+    title: "NOT FOUND",
+  })}
 </head>
 <body>
   <main class="page text-page">
@@ -1896,6 +1886,52 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function renderBaseHead(options = {}) {
+  const title =
+    typeof options.title === "string" && options.title ? options.title : "Hourcrate";
+  const description =
+    typeof options.description === "string" && options.description
+      ? options.description
+      : "";
+  const canonical =
+    typeof options.canonical === "string" && options.canonical ? options.canonical : "";
+  const robots =
+    typeof options.robots === "string" && options.robots ? options.robots : "";
+
+  const headTags = [
+    '<meta charset="UTF-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+    `<title>${escapeHtml(title)}</title>`,
+  ];
+
+  if (description) {
+    headTags.push(`<meta name="description" content="${escapeHtml(description)}">`);
+  }
+  if (robots) {
+    headTags.push(`<meta name="robots" content="${escapeHtml(robots)}">`);
+  }
+  if (canonical) {
+    headTags.push(`<link rel="canonical" href="${escapeHtml(canonical)}">`);
+  }
+
+  headTags.push(
+    '<meta name="application-name" content="Hourcrate">',
+    '<meta name="apple-mobile-web-app-title" content="Hourcrate">',
+    '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">',
+    '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">',
+    '<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">',
+    '<link rel="shortcut icon" href="/favicon.ico">',
+    '<link rel="manifest" href="/site.webmanifest">',
+    '<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#ccff00">',
+    '<meta name="msapplication-TileColor" content="#ccff00">',
+    '<meta name="msapplication-config" content="/browserconfig.xml">',
+    '<meta name="theme-color" content="#ccff00">',
+    '<link rel="stylesheet" href="/styles.css">'
+  );
+
+  return headTags.map((tag) => `  ${tag}`).join("\n");
 }
 
 function requestExpectsJson(req) {
