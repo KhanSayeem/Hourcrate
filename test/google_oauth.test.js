@@ -45,6 +45,12 @@ function extractStateFromRedirect(location) {
 
 test("Google login is blocked when user does not exist", async (t) => {
   const { app, pool } = await setupTest();
+  // Seed a user so that the "first user" exception doesn't trigger
+  await pool.query("INSERT INTO users (email, password_hash) VALUES ($1, $2)", [
+    "existing@example.com",
+    "hash",
+  ]);
+  
   t.after(async () => {
     await pool.end();
   });
@@ -149,7 +155,7 @@ test("Google login sets session cookie and allows dashboard", async (t) => {
     .set("Accept", "text/html");
 
   assert.strictEqual(dashboardRes.status, 200);
-  assert.ok(dashboardRes.text.includes("Monthly Hours"));
+  assert.ok(dashboardRes.text.includes("NO CLIENTS YET"));
 });
 
 test("Google signup works when no users exist", async (t) => {

@@ -6,6 +6,9 @@ const path = require("path");
 const { authMiddleware, optionalAuthMiddleware } = require("./auth");
 const fastspring = require("./fastspring");
 
+const DEFAULT_FASTSPRING_STORE_URL = "https://hourcrate.test.onfastspring.com";
+const DEFAULT_FASTSPRING_PRODUCT_PATH = "Hourcrate";
+
 const SESSION_TTL_HOURS = 24 * 7;
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -221,31 +224,53 @@ function createApp(pool, config = {}) {
   });
 
   app.get("/upgrade", optionalAuthMiddleware(pool), (req, res) => {
-    const storeUrl = process.env.FASTSPRING_STORE_URL;
-    const productPath = process.env.FASTSPRING_PRODUCT_PATH;
+    const storeUrl = process.env.FASTSPRING_STORE_URL || DEFAULT_FASTSPRING_STORE_URL;
+    const productPath =
+      process.env.FASTSPRING_PRODUCT_PATH || DEFAULT_FASTSPRING_PRODUCT_PATH;
+    const usingDefaults =
+      !process.env.FASTSPRING_STORE_URL || !process.env.FASTSPRING_PRODUCT_PATH;
 
     if (req.user && req.user.isPaid) {
       return res.redirect("/dashboard");
     }
 
     if (storeUrl && productPath) {
-      // Construct FastSpring Web Storefront URL
-      // Format: https://STORE.onfastspring.com/PRODUCT-PATH
-      const baseUrl = storeUrl.endsWith("/") ? storeUrl : storeUrl + "/";
-      const checkoutUrl = new URL(productPath, baseUrl);
-      
-      if (req.userId) {
-        checkoutUrl.searchParams.set("tags", `userId:${req.userId}`);
-        checkoutUrl.searchParams.set("email", req.user.email); // Pre-fill email
+      try {
+        // Construct FastSpring Web Storefront URL
+        // Format: https://STORE.onfastspring.com/PRODUCT-PATH
+        const baseUrl = storeUrl.endsWith("/") ? storeUrl : storeUrl + "/";
+        const checkoutUrl = new URL(productPath, baseUrl);
+
+        if (req.user) {
+          if (req.userId) {
+            checkoutUrl.searchParams.set("tags", `userId:${req.userId}`);
+          }
+          if (req.user.email) {
+        
+            checkoutUrl.searchParams.set("email", req.user.email); // Pre-fill email
+          }
+        }
+
+        if (usingDefaults) {
+          console.warn(
+            "[FastSpring] Using bundled FastSpring defaults. Set FASTSPRING_STORE_URL and FASTSPRING_PRODUCT_PATH to override."
+          );
+        }
+        return res.redirect(checkoutUrl.toString());
+      } catch (error) {
+        console.error("[FastSpring] Error constructing checkout URL:", error);
       }
-      return res.redirect(checkoutUrl.toString());
+    } else {
+      console.warn(
+        "[FastSpring] Missing environment variables: FASTSPRING_STORE_URL or FASTSPRING_PRODUCT_PATH"
+      );
     }
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     return res.status(200).send(
       renderInfoPage("GO PRO", [
-        "UNLIMITED CLIENTS. HISTORY. EXPORTS. ALERTS.",
-        "PAYMENTS COMING SOON.",
+        "UNLIMITED CLIENTS. HISTORY. EXPORTS. ALERTS",
+        "PAYMENTS COMING SOON",
       ])
     );
   });
@@ -253,17 +278,25 @@ function createApp(pool, config = {}) {
   app.post("/webhooks/fastspring", async (req, res) => {
     const signature = req.get("X-FS-Signature");
     const secret = process.env.FASTSPRING_HMAC_SECRET;
-    
+
     console.log("[FastSpring] Webhook received");
-    console.log("[FastSpring] Signature Header:", signature);
-    // console.log("[FastSpring] Raw Body:", req.rawBody); // Uncomment if needed (be careful with PII)
+
+    if (!secret) {
+      console.error("[FastSpring] Missing FASTSPRING_HMAC_SECRET environment variable.");
+      return res.status(500).send("Configuration Error");
+    }
 
     if (!fastspring.verifySignature(req.rawBody, signature, secret)) {
       console.warn("[FastSpring] Invalid signature");
-      console.warn("[FastSpring] Expected vs Actual:", 
-        crypto.createHmac("sha256", secret).update(req.rawBody).digest("base64"), 
-        signature
-      );
+      try {
+        const expected = crypto
+          .createHmac("sha256", secret)
+          .update(req.rawBody || "")
+          .digest("base64");
+        console.warn(`[FastSpring] Expected: ${expected}, Actual: ${signature}`);
+      } catch (e) {
+        console.error("[FastSpring] Error re-calculating signature for log:", e.message);
+      }
       return res.status(401).send("Invalid signature");
     }
 
@@ -339,98 +372,139 @@ function createApp(pool, config = {}) {
     return res.redirect(303, url.toString());
   });
 
-  app.get("/auth/google/callback", optionalAuthMiddleware(pool), async (req, res) => {
-    if (req.userId) {
-      return res.redirect("/dashboard");
-    }
-    const googleConfig = getGoogleConfig(googleOverrides);
-    if (!googleConfig) {
-      return res.redirect(
-        303,
-        "/login?error=" + encodeURIComponent("Google sign-in is not configured.")
-      );
-    }
-
-    const prefersHtml = requestExpectsHtml(req) && !requestExpectsJson(req);
-    if (!prefersHtml) {
-      return res.status(400).json({ error: "OAuth callbacks must be HTML requests." });
-    }
-
-    const code = typeof req.query.code === "string" ? req.query.code : "";
-    const state = typeof req.query.state === "string" ? req.query.state : "";
-    if (!code || !state) {
-      return res.redirect(
-        303,
-        "/login?error=" + encodeURIComponent("Google sign-in failed.")
-      );
-    }
-
-    const cookies = parseCookies(req);
-    const signedState = cookies.oauth_state;
-    const expectedState = verifySignedState(signedState, googleConfig.stateSecret);
-    res.clearCookie("oauth_state", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: isProductionEnv(),
-    });
-    if (!expectedState || expectedState.state !== state) {
-      return res.redirect(
-        303,
-        "/login?error=" + encodeURIComponent("Google sign-in failed.")
-      );
-    }
-
-    const oauthMode = expectedState.mode === "signup" ? "signup" : "signin";
-
-    let tokenPayload;
+      app.get("/auth/google/callback", optionalAuthMiddleware(pool), async (req, res) => {
     try {
-      const redirectUri = resolveRedirectUri(googleConfig.baseUrl, googleConfig.redirectPath);
-      const tokenResponse = await googleConfig.exchangeCodeForTokens({
-        code,
-        clientId: googleConfig.clientId,
-        clientSecret: googleConfig.clientSecret,
-        redirectUri,
-      });
-      tokenPayload = await googleConfig.verifyIdToken(
-        tokenResponse.id_token,
-        googleConfig.clientId
-      );
-    } catch (err) {
-      console.error("[oauth] token exchange failed", err);
-      return res.redirect(
-        303,
-        "/login?error=" + encodeURIComponent("Google sign-in failed.")
-      );
-    }
-
-    const googleSub = typeof tokenPayload.sub === "string" ? tokenPayload.sub : "";
-    const email = typeof tokenPayload.email === "string" ? tokenPayload.email : "";
-    const emailVerified =
-      tokenPayload.email_verified === true || tokenPayload.email_verified === "true";
-    const normalizedEmail = normalizeEmail(email);
-    if (!googleSub || !normalizedEmail || !emailVerified) {
-      return res.redirect(
-        303,
-        "/login?error=" + encodeURIComponent("Google sign-in failed.")
-      );
-    }
-
-    if (oauthMode === "signup") {
-      const existingUser = await pool.query(
-        "SELECT id FROM users WHERE email = $1",
-        [normalizedEmail]
-      );
-      if (existingUser.rowCount > 0) {
+      if (req.userId) {
+        return res.redirect("/dashboard");
+      }
+      const googleConfig = getGoogleConfig(googleOverrides);
+      if (!googleConfig) {
         return res.redirect(
           303,
-          "/login?error=" + encodeURIComponent("Account already exists. Please sign in.")
+          "/login?error=" + encodeURIComponent("Google sign-in is not configured.")
         );
       }
-      const insertResult = await pool.query(
-        "INSERT INTO users (email, password_hash, google_sub, auth_provider, is_paid) VALUES ($1, $2, $3, 'google', false) RETURNING id",
-        [normalizedEmail, null, googleSub]
+
+      const prefersHtml = requestExpectsHtml(req) && !requestExpectsJson(req);
+      if (!prefersHtml) {
+        return res.status(400).json({ error: "OAuth callbacks must be HTML requests." });
+      }
+
+      const code = typeof req.query.code === "string" ? req.query.code : "";
+      const state = typeof req.query.state === "string" ? req.query.state : "";
+      if (!code || !state) {
+        return res.redirect(
+          303,
+          "/login?error=" + encodeURIComponent("Google sign-in failed (missing params).")
+        );
+      }
+
+      const cookies = parseCookies(req);
+      const signedState = cookies.oauth_state;
+      const expectedState = verifySignedState(signedState, googleConfig.stateSecret);
+      res.clearCookie("oauth_state", {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: isProductionEnv(),
+      });
+      if (!expectedState || expectedState.state !== state) {
+        return res.redirect(
+          303,
+          "/login?error=" + encodeURIComponent("Google sign-in failed (invalid state).")
+        );
+      }
+
+      const oauthMode = expectedState.mode === "signup" ? "signup" : "signin";
+
+      let tokenPayload;
+      try {
+        const redirectUri = resolveRedirectUri(googleConfig.baseUrl, googleConfig.redirectPath);
+        const tokenResponse = await googleConfig.exchangeCodeForTokens({
+          code,
+          clientId: googleConfig.clientId,
+          clientSecret: googleConfig.clientSecret,
+          redirectUri,
+        });
+        tokenPayload = await googleConfig.verifyIdToken(
+          tokenResponse.id_token,
+          googleConfig.clientId
+        );
+      } catch (err) {
+        console.error("[oauth] token exchange failed", err);
+        return res.redirect(
+          303,
+          "/login?error=" + encodeURIComponent("Google sign-in failed (token exchange).")
+        );
+      }
+
+      const googleSub = typeof tokenPayload.sub === "string" ? tokenPayload.sub : "";
+      const email = typeof tokenPayload.email === "string" ? tokenPayload.email : "";
+      const emailVerified =
+        tokenPayload.email_verified === true || tokenPayload.email_verified === "true";
+      const normalizedEmail = normalizeEmail(email);
+      if (!googleSub || !normalizedEmail || !emailVerified) {
+        return res.redirect(
+          303,
+          "/login?error=" + encodeURIComponent("Google sign-in failed (invalid profile).")
+        );
+      }
+
+      const countResult = await pool.query("SELECT COUNT(*) AS count FROM users");
+      const userCount = Number(countResult.rows[0].count);
+      const isFirstUser = userCount === 0;
+
+      if (oauthMode === "signup" || isFirstUser) {
+        const existingUser = await pool.query(
+          "SELECT id FROM users WHERE email = $1",
+          [normalizedEmail]
+        );
+        if (existingUser.rowCount > 0) {
+          return res.redirect(
+            303,
+            "/login?error=" + encodeURIComponent("Account already exists. Please sign in.")
+          );
+        }
+
+        const insertResult = await pool.query(
+          "INSERT INTO users (email, password_hash, google_sub, auth_provider, is_paid) VALUES ($1, $2, $3, 'google', false) RETURNING id",
+          [normalizedEmail, null, googleSub]
+        );
+        const userId = insertResult.rows[0].id;
+        const token = crypto.randomBytes(32).toString("hex");
+        const expiresAt = new Date(Date.now() + SESSION_TTL_HOURS * 3600 * 1000);
+        await pool.query(
+          "INSERT INTO sessions (user_id, session_token, expires_at) VALUES ($1, $2, $3)",
+          [userId, token, expiresAt]
+        );
+        res.cookie("session_token", token, getSessionCookieOptions(expiresAt));
+        return res.redirect(303, "/dashboard");
+      }
+
+      const existingUser = await pool.query(
+        "SELECT id, google_sub FROM users WHERE email = $1",
+        [normalizedEmail]
       );
-      const userId = insertResult.rows[0].id;
+
+      if (existingUser.rowCount === 0) {
+        return res.redirect(
+          303,
+          "/login?error=" + encodeURIComponent("User with this email does not exist")
+        );
+      }
+
+      const user = existingUser.rows[0];
+      if (user.google_sub && user.google_sub !== googleSub) {
+        return res.redirect(
+          303,
+          "/login?error=" + encodeURIComponent("Google sign-in failed.")
+        );
+      }
+      await pool.query(
+        "UPDATE users SET google_sub = $1, auth_provider = 'google' WHERE id = $2",
+        [user.google_sub || googleSub, user.id]
+      );
+      const userId = user.id;
+
       const token = crypto.randomBytes(32).toString("hex");
       const expiresAt = new Date(Date.now() + SESSION_TTL_HOURS * 3600 * 1000);
       await pool.query(
@@ -439,44 +513,16 @@ function createApp(pool, config = {}) {
       );
       res.cookie("session_token", token, getSessionCookieOptions(expiresAt));
       return res.redirect(303, "/dashboard");
-    }
-
-    const existingUser = await pool.query(
-      "SELECT id, google_sub FROM users WHERE email = $1",
-      [normalizedEmail]
-    );
-
-    if (existingUser.rowCount === 0) {
+    } catch (err) {
+      console.error("[oauth] callback error", err);
       return res.redirect(
         303,
-        "/login?error=" + encodeURIComponent("User with this email does not exist")
+        "/login?error=" + encodeURIComponent("An error occurred during sign-in.")
       );
     }
-
-    const user = existingUser.rows[0];
-    if (user.google_sub && user.google_sub !== googleSub) {
-      return res.redirect(
-        303,
-        "/login?error=" + encodeURIComponent("Google sign-in failed.")
-      );
-    }
-    await pool.query(
-      "UPDATE users SET google_sub = $1, auth_provider = 'google' WHERE id = $2",
-      [user.google_sub || googleSub, user.id]
-    );
-    const userId = user.id;
-
-    const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + SESSION_TTL_HOURS * 3600 * 1000);
-    await pool.query(
-      "INSERT INTO sessions (user_id, session_token, expires_at) VALUES ($1, $2, $3)",
-      [userId, token, expiresAt]
-    );
-    res.cookie("session_token", token, getSessionCookieOptions(expiresAt));
-    return res.redirect(303, "/dashboard");
   });
 
-  app.post("/users", optionalAuthMiddleware(pool), async (req, res) => {
+app.post("/users", optionalAuthMiddleware(pool), async (req, res) => {
     // Single-operator: allow creation only if no users exist.
     const { email, password } = req.body || {};
     const normalizedEmail = normalizeEmail(email);
@@ -559,6 +605,32 @@ function createApp(pool, config = {}) {
       return res.redirect(303, "/dashboard");
     }
     return res.status(201).json({ ok: true });
+  });
+
+  app.get("/logout", async (req, res) => {
+    const prefersJson = requestExpectsJson(req);
+    const prefersHtml = requestExpectsHtml(req) && !prefersJson;
+    const cookies = parseCookies(req);
+    const token = cookies["session_token"];
+
+    if (token) {
+      try {
+        await pool.query("DELETE FROM sessions WHERE session_token = $1", [token]);
+      } catch (err) {
+        console.error("[logout] failed to delete session", err);
+      }
+    }
+
+    res.clearCookie("session_token", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: isProductionEnv(),
+    });
+
+    if (prefersHtml) {
+      return res.redirect(303, "/");
+    }
+    return res.status(200).json({ ok: true });
   });
 
   app.use(authMiddleware(pool));
@@ -1190,6 +1262,9 @@ function renderLandingPage(options = {}) {
   const signupLink = isAuthenticated
     ? ""
     : '<a class="cta-secondary" href="/signup">SIGN UP</a>';
+  const footerAuthLink = isAuthenticated
+    ? '<a href="/logout">LOGOUT</a>'
+    : '<a href="/login">LOGIN</a>';
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -1234,7 +1309,7 @@ ${renderBaseHead({
 
   <footer class="footer">
     <div class="footer-links" aria-label="Footer navigation">
-      <a href="/login">LOGIN</a>
+      ${footerAuthLink}
       <a href="/pricing">PRICING</a>
       <a href="/privacy">PRIVACY</a>
       <a href="/terms">TERMS</a>

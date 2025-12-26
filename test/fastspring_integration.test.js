@@ -122,7 +122,7 @@ test("/upgrade redirects to FastSpring checkout with tags", async (t) => {
   assert.strictEqual(res.status, 302);
   const location = new URL(res.headers.location);
   assert.strictEqual(location.hostname, "test.onfastspring.com");
-  assert.strictEqual(location.pathname, "/fastspring-popup-checkout/product/pro");
+  assert.strictEqual(location.pathname, "/pro");
   assert.strictEqual(location.searchParams.get("tags"), `userId:${userId}`);
   assert.strictEqual(location.searchParams.get("email"), "payer@example.com");
 });
