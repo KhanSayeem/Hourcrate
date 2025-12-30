@@ -263,6 +263,9 @@ function createApp(pool, config = {}) {
     const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
 
     console.log("[Lemon Squeezy] Webhook received");
+    console.log(`[Lemon Squeezy] Signature header: ${signature ? "Present" : "Missing"}`);
+    console.log(`[Lemon Squeezy] Secret configured: ${secret ? "Yes" : "No"}`);
+    console.log(`[Lemon Squeezy] Raw Body length: ${req.rawBody ? req.rawBody.length : "undefined"}`);
 
     if (!secret) {
       console.error("[Lemon Squeezy] Missing LEMONSQUEEZY_WEBHOOK_SECRET environment variable.");

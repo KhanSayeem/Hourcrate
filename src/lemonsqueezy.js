@@ -24,6 +24,7 @@ function verifySignature(rawBody, signature, secret) {
  * Processes the Lemon Squeezy webhook events.
  */
 async function processWebhook(pool, body) {
+  console.log("[Lemon Squeezy] Webhook body meta:", JSON.stringify(body.meta, null, 2));
   const eventName = body.meta.event_name;
   const customData = body.meta.custom_data || {};
   const data = body.data;
