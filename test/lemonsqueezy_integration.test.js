@@ -57,7 +57,7 @@ test("Lemon Squeezy webhook updates user to paid status", async (t) => {
     .digest("hex");
 
   const res = await request(app)
-    .post("/webhooks/lemonsqueezy")
+    .post("/api/webhooks/lemonsqueezy")
     .set("Content-Type", "application/json")
     .set("X-Signature", signature)
     .send(payload);
@@ -82,7 +82,7 @@ test("Lemon Squeezy webhook rejects invalid signature", async (t) => {
   const signature = "invalid_signature";
 
   const res = await request(app)
-    .post("/webhooks/lemonsqueezy")
+    .post("/api/webhooks/lemonsqueezy")
     .set("Content-Type", "application/json")
     .set("X-Signature", signature)
     .send(payload);

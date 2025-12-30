@@ -258,7 +258,7 @@ function createApp(pool, config = {}) {
     );
   });
 
-  app.post("/webhooks/lemonsqueezy", async (req, res) => {
+  app.post("/api/webhooks/lemonsqueezy", async (req, res) => {
     const signature = req.get("X-Signature");
     const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
 
@@ -1323,7 +1323,7 @@ function renderPricingPage() {
 ${renderBaseHead({
     title: "Pricing - Hourcrate",
     description:
-      "Hourcrate pricing: Free for two clients, Hourcrate Pro at $12/month for unlimited clients, history, exports, and alerts.",
+      "Hourcrate pricing: Free for two clients, Hourcrate Pro at $11.99/month for unlimited clients, history, exports, and alerts.",
     canonical: "https://hourcrate.com/pricing",
     robots: "index, follow",
   })}
@@ -1351,7 +1351,7 @@ ${renderBaseHead({
         <li>EXPORTS</li>
         <li>ALERTS</li>
       </ul>
-      <p class="plan-price">$12 / MO</p>
+      <p class="plan-price">$11.99 / MO</p>
       <p class="plan-note">CANCEL ANYTIME.</p>
     </section>
 
