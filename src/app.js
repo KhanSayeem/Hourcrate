@@ -4,10 +4,7 @@ const express = require("express");
 const https = require("https");
 const path = require("path");
 const { authMiddleware, optionalAuthMiddleware } = require("./auth");
-const fastspring = require("./fastspring");
-
-const DEFAULT_FASTSPRING_STORE_URL = "https://hourcrate.test.onfastspring.com";
-const DEFAULT_FASTSPRING_PRODUCT_PATH = "Hourcrate";
+const lemonsqueezy = require("./lemonsqueezy");
 
 const SESSION_TTL_HOURS = 24 * 7;
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
@@ -224,45 +221,31 @@ function createApp(pool, config = {}) {
   });
 
   app.get("/upgrade", optionalAuthMiddleware(pool), (req, res) => {
-    const storeUrl = process.env.FASTSPRING_STORE_URL || DEFAULT_FASTSPRING_STORE_URL;
-    const productPath =
-      process.env.FASTSPRING_PRODUCT_PATH || DEFAULT_FASTSPRING_PRODUCT_PATH;
-    const usingDefaults =
-      !process.env.FASTSPRING_STORE_URL || !process.env.FASTSPRING_PRODUCT_PATH;
+    const checkoutUrlString = process.env.LEMONSQUEEZY_CHECKOUT_URL;
 
     if (req.user && req.user.isPaid) {
       return res.redirect("/dashboard");
     }
 
-    if (storeUrl && productPath) {
+    if (checkoutUrlString) {
       try {
-        // Construct FastSpring Web Storefront URL
-        // Format: https://STORE.onfastspring.com/PRODUCT-PATH
-        const baseUrl = storeUrl.endsWith("/") ? storeUrl : storeUrl + "/";
-        const checkoutUrl = new URL(productPath, baseUrl);
+        const checkoutUrl = new URL(checkoutUrlString);
 
         if (req.user) {
           if (req.userId) {
-            checkoutUrl.searchParams.set("tags", `userId:${req.userId}`);
+            checkoutUrl.searchParams.set("checkout[custom][user_id]", req.userId);
           }
           if (req.user.email) {
-        
-            checkoutUrl.searchParams.set("email", req.user.email); // Pre-fill email
+            checkoutUrl.searchParams.set("checkout[email]", req.user.email);
           }
-        }
-
-        if (usingDefaults) {
-          console.warn(
-            "[FastSpring] Using bundled FastSpring defaults. Set FASTSPRING_STORE_URL and FASTSPRING_PRODUCT_PATH to override."
-          );
         }
         return res.redirect(checkoutUrl.toString());
       } catch (error) {
-        console.error("[FastSpring] Error constructing checkout URL:", error);
+        console.error("[Lemon Squeezy] Error constructing checkout URL:", error);
       }
     } else {
       console.warn(
-        "[FastSpring] Missing environment variables: FASTSPRING_STORE_URL or FASTSPRING_PRODUCT_PATH"
+        "[Lemon Squeezy] Missing environment variable: LEMONSQUEEZY_CHECKOUT_URL"
       );
     }
 
@@ -275,38 +258,28 @@ function createApp(pool, config = {}) {
     );
   });
 
-  app.post("/webhooks/fastspring", async (req, res) => {
-    const signature = req.get("X-FS-Signature");
-    const secret = process.env.FASTSPRING_HMAC_SECRET;
+  app.post("/webhooks/lemonsqueezy", async (req, res) => {
+    const signature = req.get("X-Signature");
+    const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
 
-    console.log("[FastSpring] Webhook received");
+    console.log("[Lemon Squeezy] Webhook received");
 
     if (!secret) {
-      console.error("[FastSpring] Missing FASTSPRING_HMAC_SECRET environment variable.");
+      console.error("[Lemon Squeezy] Missing LEMONSQUEEZY_WEBHOOK_SECRET environment variable.");
       return res.status(500).send("Configuration Error");
     }
 
-    if (!fastspring.verifySignature(req.rawBody, signature, secret)) {
-      console.warn("[FastSpring] Invalid signature");
-      try {
-        const expected = crypto
-          .createHmac("sha256", secret)
-          .update(req.rawBody || "")
-          .digest("base64");
-        console.warn(`[FastSpring] Expected: ${expected}, Actual: ${signature}`);
-      } catch (e) {
-        console.error("[FastSpring] Error re-calculating signature for log:", e.message);
-      }
+    if (!lemonsqueezy.verifySignature(req.rawBody, signature, secret)) {
+      console.warn("[Lemon Squeezy] Invalid signature");
       return res.status(401).send("Invalid signature");
     }
 
     try {
-      const events = req.body.events;
-      console.log("[FastSpring] Events:", JSON.stringify(events, null, 2));
-      await fastspring.processWebhook(pool, events);
+      const body = req.body;
+      await lemonsqueezy.processWebhook(pool, body);
       return res.status(200).send("OK");
     } catch (err) {
-      console.error("[FastSpring] Webhook processing failed", err);
+      console.error("[Lemon Squeezy] Webhook processing failed", err);
       return res.status(500).send("Internal Error");
     }
   });

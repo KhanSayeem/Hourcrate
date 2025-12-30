@@ -29,43 +29,37 @@ async function seedUser(pool) {
   return result.rows[0].id;
 }
 
-test("FastSpring webhook updates user to paid status", async (t) => {
-  process.env.FASTSPRING_HMAC_SECRET = "test_secret";
+test("Lemon Squeezy webhook updates user to paid status", async (t) => {
+  process.env.LEMONSQUEEZY_WEBHOOK_SECRET = "test_secret";
   const { app, pool, userId } = await setupTest();
   t.after(async () => {
     await pool.end();
-    delete process.env.FASTSPRING_HMAC_SECRET;
+    delete process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
   });
 
   const payload = JSON.stringify({
-    events: [
-      {
-        id: "evt_123",
-        type: "order.completed",
-        live: false,
-        processed: false,
-        data: {
-          id: "ord_123",
-          tags: {
-            userId: userId,
-          },
-          customer: {
-            email: "payer@example.com",
-          },
-        },
+    meta: {
+      event_name: "order_created",
+      custom_data: {
+        user_id: userId,
       },
-    ],
+    },
+    data: {
+      attributes: {
+        user_email: "payer@example.com",
+      },
+    },
   });
 
   const signature = crypto
     .createHmac("sha256", "test_secret")
     .update(payload)
-    .digest("base64");
+    .digest("hex");
 
   const res = await request(app)
-    .post("/webhooks/fastspring")
+    .post("/webhooks/lemonsqueezy")
     .set("Content-Type", "application/json")
-    .set("X-FS-Signature", signature)
+    .set("X-Signature", signature)
     .send(payload);
 
   assert.strictEqual(res.status, 200);
@@ -76,29 +70,28 @@ test("FastSpring webhook updates user to paid status", async (t) => {
   assert.strictEqual(userResult.rows[0].is_paid, true);
 });
 
-test("FastSpring webhook rejects invalid signature", async (t) => {
-  process.env.FASTSPRING_HMAC_SECRET = "test_secret";
+test("Lemon Squeezy webhook rejects invalid signature", async (t) => {
+  process.env.LEMONSQUEEZY_WEBHOOK_SECRET = "test_secret";
   const { app, pool } = await setupTest();
   t.after(async () => {
     await pool.end();
-    delete process.env.FASTSPRING_HMAC_SECRET;
+    delete process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
   });
 
-  const payload = JSON.stringify({ events: [] });
+  const payload = JSON.stringify({ meta: { event_name: "order_created" } });
   const signature = "invalid_signature";
 
   const res = await request(app)
-    .post("/webhooks/fastspring")
+    .post("/webhooks/lemonsqueezy")
     .set("Content-Type", "application/json")
-    .set("X-FS-Signature", signature)
+    .set("X-Signature", signature)
     .send(payload);
 
   assert.strictEqual(res.status, 401);
 });
 
-test("/upgrade redirects to FastSpring checkout with tags", async (t) => {
-  process.env.FASTSPRING_STORE_URL = "https://test.onfastspring.com";
-  process.env.FASTSPRING_PRODUCT_PATH = "pro";
+test("/upgrade redirects to Lemon Squeezy checkout with custom data", async (t) => {
+  process.env.LEMONSQUEEZY_CHECKOUT_URL = "https://store.lemonsqueezy.com/checkout/buy/variant_123";
   
   const { app, pool, userId } = await setupTest();
   
@@ -111,8 +104,7 @@ test("/upgrade redirects to FastSpring checkout with tags", async (t) => {
 
   t.after(async () => {
     await pool.end();
-    delete process.env.FASTSPRING_STORE_URL;
-    delete process.env.FASTSPRING_PRODUCT_PATH;
+    delete process.env.LEMONSQUEEZY_CHECKOUT_URL;
   });
 
   const res = await request(app)
@@ -121,8 +113,8 @@ test("/upgrade redirects to FastSpring checkout with tags", async (t) => {
 
   assert.strictEqual(res.status, 302);
   const location = new URL(res.headers.location);
-  assert.strictEqual(location.hostname, "test.onfastspring.com");
-  assert.strictEqual(location.pathname, "/pro");
-  assert.strictEqual(location.searchParams.get("tags"), `userId:${userId}`);
-  assert.strictEqual(location.searchParams.get("email"), "payer@example.com");
+  assert.strictEqual(location.hostname, "store.lemonsqueezy.com");
+  assert.strictEqual(location.pathname, "/checkout/buy/variant_123");
+  assert.strictEqual(location.searchParams.get("checkout[custom][user_id]"), String(userId));
+  assert.strictEqual(location.searchParams.get("checkout[email]"), "payer@example.com");
 });
